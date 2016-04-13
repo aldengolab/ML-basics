@@ -96,17 +96,20 @@ def plot(dataframe):
     Plots histograms or bar charts for each column and saves to file within
     the same directory.
     '''
+    histogram = ['object', 'category']
     for col in dataframe.columns:
-        if dataframe[col].dtype == object:
+        if dataframe[col].dtype.name in histogram:
             dataframe[col].value_counts().plot(kind = 'bar')
             plt.suptitle('Bar Graph for {}'.format(col), fontsize = 14)
             plt.savefig('{}.png'.format(col))
             print('Saved figure as {}.png'.format(col))
+            plt.close()
         else:
             dataframe[col].hist()
             plt.suptitle('Histogram for {}'.format(col), fontsize = 14)
             plt.savefig('{}.png'.format(col))
             print('Saved figure as {}.png'.format(col))
+            plt.close()
 
 def impute(data, column, method = 'mean', classification = None, 
     distribution = None, write = False):
