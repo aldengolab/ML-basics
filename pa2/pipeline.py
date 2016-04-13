@@ -41,7 +41,7 @@ def summarize(dataframe, column = None, plots = False, write = False):
 
     if write == True:
         for summ in summaries:
-            summ[2].to_csv('{}/{}_summary.csv'.format(summ[1]))
+            summ[2].to_csv('{}_summary.csv'.format(summ[1]))
         print('Wrote descriptive statistics to file.')
     if plots == True:
         plot(dataframe)
