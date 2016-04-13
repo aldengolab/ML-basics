@@ -43,3 +43,12 @@ def predict_test(logit, test_data_filename):
     test_data = pl.clean_data(test_data_filename)
     prediction = logit.test_model(test_data)
     return prediction
+
+def go(filename, test_data_filename):
+    data = clean_data(filename)
+    summarize(data, write = True, plots = True)
+    logit = train_model(data)
+    prediction = predict_test(logit, test_data_filename)
+    write_csv(prediction, 'prediction.csv')
+    summarize(prediction)
+
