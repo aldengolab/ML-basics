@@ -5,10 +5,10 @@ dataset. You'll notice that the accuracy stinks and that the dataset isn't great
 we're still getting into the meat of things. 
 
 ## What's here: 
-1. _Classifier.py_: a wrapper class for data classification methods
-2. _pipeline.py_: the beginnings of my ML pipeline
-3. _run_pa2.py_: most of the code used in the write-up
-4. _GOLAB_PA2_writeup.pdf_: the write-up for the Kaggle problem
+1. __Classifier.py__: a wrapper class for data classification methods
+2. __pipeline.py__: the beginnings of my ML pipeline
+3. __run_pa2.py__: most of the code used in the write-up
+4. __GOLAB_PA2_writeup.pdf__: the write-up for the Kaggle problem
 
 ## Links:
 The Kaggle dataset can be found here: https://www.kaggle.com/c/GiveMeSomeCredit/data
