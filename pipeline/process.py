@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import copy
+import sklearn.cross_validation
 
 def impute(data, column, method = 'mean', classification = None, 
     distribution = None, write = False):
@@ -161,8 +162,50 @@ def log_scale(dataframe, col):
     '''
     Converts given column into a log scale, then appends to the end of the 
     dataframe.
+
+    Returns new dataframe with column added.
+    '''
+    data = np.log(dataframe[col])
+    data.name = 'log_' + str(col)
+    print(data)
+    return pd.concat([dataframe, data], axis = 1)
+
+def normalize_scale(dataframe, col, negative = False):
+    '''
+    Scales range to [0, 1] range. Will scale to [-1, 1] if negative is
+    set to True.
+
+    Returns new dataframe with column added.
     '''
     data = dataframe[col]
+    maxval = max(data)
+    minval = min(data)
+    valrange = maxval - minval
+    scalemax = 1
+    if negative:
+        scalemin = -1
+    else:
+        scalemin = 0
+    scalerange = scalemax - scalemin
+    assert maxval != 0
+    assert minval != maxval
     new = []
+
     for x in data:
-        new.append(math.log(x)
+        new.append(((scalerange * (x - minval)) / valrange) + scalemin)
+    data = pd.Series(new)
+    data.name = 'scaled_' + str(col)
+    return pd.concat([dataframe, data], axis = 1)
+
+def test_train_split(dataframe, test_size = .1):
+    '''
+    Randomly selects a portion of the dataset for training and testing. 
+    Default is a 90/10 split; can be adjusted using propotion.
+
+    Returns test, train. 
+    '''
+    split = sklearn.cross_validation.train_test_split(dataframe, 
+        test_size = test_size)
+    return (split[0], split[1])
+
+

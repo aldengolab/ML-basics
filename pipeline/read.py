@@ -4,12 +4,6 @@
 # 
 # File read functions
 
-import pandas as pd 
-import numpy as np 
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import copy
-
 def load_file(filename, index = None):
     '''
     Reads file with column index  and returns a Pandas dataframe. If index
@@ -31,3 +25,9 @@ def load_file(filename, index = None):
     else: 
         print ('Input currently not built for this filetype')
 
+def write_csv(dataframe, filename):
+    '''
+    Writes dataframe to csv.
+    '''
+    dataframe.to_csv(filename)
+    print('Wrote data to {}'.format(filename))
