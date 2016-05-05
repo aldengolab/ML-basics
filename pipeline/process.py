@@ -12,15 +12,18 @@ import copy
 import sklearn.cross_validation
 
 def impute(data, column, method = 'mean', classification = None, 
-    distribution = None, write = False):
+    distribution = None, write = False, keep = False):
     '''
     Runs imputation for data, given a particular method and column. Default
     will run mean imputation. If distribution is not selected, will run
     probabilistic with normal distribution. Requires classification for 
     conditional mean imputation. Writes imputed dataframe to csv.
+
+    Returns: dataframe with imputed values
+    OPTIONAL: will also return mean value for mean imputation
     '''
     if method == 'mean':
-        data = impute_mean(data, column)
+        data, mean = impute_mean(data, column)
     elif method == 'conditional':
         if classification == None: 
             raise ValueError('Classification needed for conditional imputation.')
@@ -36,8 +39,9 @@ def impute(data, column, method = 'mean', classification = None,
         new_file = filename[:-4] + '_imputed.csv'
         data.to_csv(new_file)
         print('Wrote data with imputation to {}'.format(new_file))
-    
-    return data
+    if keep and method == 'mean':
+        return data, mean
+    return data 
 
 def impute_mean(data, column):
     '''
@@ -46,17 +50,19 @@ def impute_mean(data, column):
     Inputs: pandas dataframe, column to impute into
     '''
     dataframe = copy.deepcopy(data)
+    mean = dataframe[column].mean()
 
     for row in dataframe[dataframe[column].isnull()].iterrows():
-        dataframe.loc[row[0], column] = dataframe[column].mean()
+        dataframe.loc[row[0], column] = mean
 
-    return dataframe
+    return dataframe, mean
 
 def impute_cond(data, column, classification):
     '''
     Genderalized conditional mean imputation.
 
     Inputs: pandas dataframe, column to impute into, classification to impute on
+    Returns: 
     '''
     dataframe = copy.deepcopy(data)
     
@@ -78,6 +84,17 @@ def impute_prob(data, column, dist = 'normal'):
         for row in dataframe[dataframe[column].isnull()].iterrows():
             dataframe.loc[row[0], column] = np.random.normal(dataframe[column].mean(), 
                 dataframe[column].std())
+
+    return dataframe
+
+def impute_specific(data, column, value):
+    '''
+    Takes a specific value to impute. Will only work with mean imputation.
+    '''
+    dataframe = copy.deepcopy(data)
+
+    for row in dataframe[dataframe[column].isnull()].iterrows():
+        dataframe.loc[row[0], column] = value
 
     return dataframe
 
@@ -197,15 +214,22 @@ def normalize_scale(dataframe, col, negative = False):
     data.name = 'scaled_' + str(col)
     return pd.concat([dataframe, data], axis = 1)
 
-def test_train_split(dataframe, test_size = .1):
+def test_train_split(dataframe, y_variable, test_size = .1):
     '''
     Randomly selects a portion of the dataset for training and testing. 
     Default is a 90/10 split; can be adjusted using propotion.
 
-    Returns test, train. 
+    Returns test X, train X, test Y, train Y. 
     '''
     split = sklearn.cross_validation.train_test_split(dataframe, 
         test_size = test_size)
-    return (split[0], split[1])
+    test = split[0]
+    train = split[1]
+    test_y = test[y_variable]
+    train_y = train[y_variable]
+    test = test.drop(y_variable, axis = 1, inplace = True)
+    train = train.drop(y_variable, axis = 1, inplace = True)
+
+    return test, train, test_y, train_y
 
 

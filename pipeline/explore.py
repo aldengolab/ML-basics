@@ -122,6 +122,7 @@ def pairwise_correlation(dataframe, cols = []):
         data = dataframe[cols]
     else:
         data = dataframe
-    return data.corr() 
+    if len(cols) != 1:
+        return data.corr() 
 
 
