@@ -90,7 +90,7 @@ def define_clfs_params():
     
     return clfs, params
 
-def clf_loop(dataframe, clfs, models_to_run, y_variable, X_variables, 
+def clf_loop(dataframe, clfs, models_to_run, params, y_variable, X_variables, 
  imp_cols = [], addl_runs = 0, evalution = ['AUC'], stat_k = .05, plot = True, 
  robustscale_cols = [], scale_columns = []):
     '''
@@ -111,12 +111,10 @@ def clf_loop(dataframe, clfs, models_to_run, y_variable, X_variables,
             X_test = process.robust_transform(X_test, col)
         X_train = process.scale_columns(X_train, scale_columns)
         X_test = process.scale_columns(X_test, scale_columns)
-        print(X_train)
-        print(X_test)
         print('Training model...')
         for index, clf in enumerate([clfs[x] for x in models_to_run]):
             print(models_to_run[index])
-            parameter_values = grid[models_to_run[index]]
+            parameter_values = params[models_to_run[index]]
             for p in ParameterGrid(parameter_values):
                 try:
                     clf.set_params(**p)
@@ -163,7 +161,7 @@ def plot_precision_recall_n(y_true, y_prob, model_name):
     ax2.plot(pct_above_per_thresh, recall_curve, 'r')
     ax2.set_ylabel('recall', color='r')
     
-    name = model_name
+    name = '{}.png'.format(model_name)
     plt.title(name)
     plt.savefig(name)
     #plt.show()
@@ -223,8 +221,8 @@ def main(filename):
     clfs, params = define_clfs_params()
     y_variable, imp_cols, models_to_run, robustscale_cols, scale_columns, \
      X_variables = define_project_params()
-    clf_loop(dataframe, clfs, models_to_run, y_variable, X_variables, imp_cols = imp_cols,
-        scale_columns = scale_columns)
+    clf_loop(dataframe, clfs, models_to_run, params, y_variable, X_variables, 
+        imp_cols = imp_cols, scale_columns = scale_columns)
 
 '''
 if __name__ == '__main__':
