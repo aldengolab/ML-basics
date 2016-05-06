@@ -111,7 +111,6 @@ def clf_loop(dataframe, clfs, models_to_run, params, y_variable, X_variables,
             X_test = process.impute_specific(X_test, col, mean)
         print('Finished imputing, transforming data...')
         for col in robustscale_cols:
-            ## Need to pass training stats into test -- overlooked
             X_train, scaler = process.robust_transform(X_train, col, keep = True)
             X_test = process.robust_transform(X_test, col, scaler = scaler)
         for col in scale_columns:
@@ -128,7 +127,7 @@ def clf_loop(dataframe, clfs, models_to_run, params, y_variable, X_variables,
                 # If cut-off of parameter iterations expected, choose random
                 if len(grid) > params_iter_max:
                     p = random.choice(grid)
-                # Run until hitting max numbter of parameter iterations
+                # Run until hitting max number of parameter iterations
                 if iteration < params_iter_max:
                     try:
                         clf.set_params(**p)
