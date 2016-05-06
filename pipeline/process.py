@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import copy
 import sklearn.cross_validation
+import sklearn.preprocessing
 
 def impute(data, column, method = 'mean', classification = None, 
     distribution = None, write = False, keep = False):
@@ -89,7 +90,7 @@ def impute_prob(data, column, dist = 'normal'):
 
 def impute_specific(data, column, value):
     '''
-    Takes a specific value to impute. Will only work with mean imputation.
+    Takes a specific value to impute. 
     '''
     dataframe = copy.deepcopy(data)
 
@@ -97,6 +98,16 @@ def impute_specific(data, column, value):
         dataframe.loc[row[0], column] = value
 
     return dataframe
+
+def robust_transform(dataframe, column):
+    '''
+    Performs robust transformation on column and appends as new column.
+    '''
+    new = sklearn.preprocessing.robust_scale(dataframe[col].reshape(-1,1))
+    new = pd.DataFrame(new)
+    new.columns = ['robust_' + column]
+    new.index = [x for x in range(1, len(new) + 1)]
+    return pd.concat([dataframe, new], axis = 1)
 
 def discretize(data, column, bins = 5, bin_size = None, labels = None, max_val = None, 
     min_val = None):
@@ -182,9 +193,11 @@ def log_scale(dataframe, col):
 
     Returns new dataframe with column added.
     '''
-    data = np.log(dataframe[col])
-    data.name = 'log_' + str(col)
-    print(data)
+    if len(dataframe[dataframe[col] == 0]) == 0:
+        data = np.log(dataframe[col])
+        data.name = 'log_' + str(col)
+    else: 
+        raise ValueError
     return pd.concat([dataframe, data], axis = 1)
 
 def normalize_scale(dataframe, col, negative = False):
@@ -223,13 +236,30 @@ def test_train_split(dataframe, y_variable, test_size = .1):
     '''
     split = sklearn.cross_validation.train_test_split(dataframe, 
         test_size = test_size)
-    test = split[0]
-    train = split[1]
+    test = copy.deepcopy(split[0])
+    train = copy.deepcopy(split[1])
     test_y = test[y_variable]
     train_y = train[y_variable]
-    test = test.drop(y_variable, axis = 1, inplace = True)
-    train = train.drop(y_variable, axis = 1, inplace = True)
+    test.drop(y_variable, axis = 1, inplace = True)
+    train.drop(y_variable, axis = 1, inplace = True)
 
     return test, train, test_y, train_y
 
+def scale_columns(dataframe, columns):
+    '''
+    Carries out scale operation for all columns specified.
+    '''
+    for col in columns: 
+        dataframe = normalize_scale(dataframe, col)
+    return dataframe
 
+def replace_value_with_nan(data, column, value):
+    '''
+    Replaces a value with NaN. 
+    '''
+    dataframe = copy.deepcopy(data)
+
+    for row in dataframe[dataframe[column] == value].iterrows():
+        dataframe.loc[row[0], column] = np.nan
+
+    return dataframe

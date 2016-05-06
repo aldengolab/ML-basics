@@ -4,14 +4,15 @@
 # 
 # Model loop. 
 
-## THIS CODE IS LIBERALLY BORROWED FROM RAYID GHANI, WITH MY EDITS ##
-## Base: https://github.com/rayidghani/magicloops/blob/master/magicloops.py ##
+## CODE STRUCTURE LIBERALLY BORROWED FROM RAYID GHANI, WITH EXTENSIVE EDITS ##
+## https://github.com/rayidghani/magicloops/blob/master/magicloops.py ##
+## Accessed: 5/5/2016 ##
 
+from __future__ import division
 import sys
 import read
 import matplotlib.cm as cm
 import copy
-from __future__ import division
 import pandas as pd
 import numpy as np
 from sklearn import preprocessing, cross_validation, svm, metrics, tree, decomposition, svm
@@ -30,20 +31,36 @@ import pylab as pl
 import matplotlib.pyplot as plt
 from scipy import optimize
 import time
-from process import test_train_split, impute
+import process
 
+THRESHOLD = .75
 
-%matplotlib inline
-
-def define_project_params:
+def define_project_params():
     '''
     Parameters specific to the project being run.
     '''
-    y_variable = 
-    imp_cols = []
-    return y_variable, imp_cols
+    y_variable = 'SeriousDlqin2yrs'
+    imp_cols = ['MonthlyIncome', 'NumberOfDependents', 'NumberOfTimes90DaysLate',
+    'NumberOfTime60-89DaysPastDueNotWorse', 'NumberOfTime30-59DaysPastDueNotWorse']
+    robustscale_cols = ['MonthlyIncome', 'NumberOfTime30-59DaysPastDueNotWorse',
+    'DebtRatio', 'NumberOfOpenCreditLinesAndLoans', 'NumberOfTimes90DaysLate', 
+    'NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse', 
+    'NumberOfDependents', 'RevolvingUtilizationOfUnsecuredLines']
+    models_to_run = ['KNN','RF','LR','AB','NB','DT']
+    scale_columns = ['robust_RevolvingUtilizationOfUnsecuredLines', 'age', 
+    'robust_NumberOfTime30-59DaysPastDueNotWorse', 'robust_DebtRatio', 
+    'robust_MonthlyIncome', 'robust_NumberOfOpenCreditLinesAndLoans', 
+    'robust_NumberOfTimes90DaysLate', 'robust_NumberRealEstateLoansOrLines',
+    'robust_NumberOfTime60-89DaysPastDueNotWorse', 'robust_NumberOfDependents']
+    X_variables = ['scaled_robust_RevolvingUtilizationOfUnsecuredLines', 'scaled_age', 
+    'scaled_robust_NumberOfTime30-59DaysPastDueNotWorse', 'scaled_robust_DebtRatio', 
+    'scaled_robust_MonthlyIncome', 'scaled_robust_NumberOfOpenCreditLinesAndLoans', 
+    'scaled_robust_NumberOfTimes90DaysLate', 'scaled_robust_NumberRealEstateLoansOrLines',
+    'scaled_robust_NumberOfTime60-89DaysPastDueNotWorse', 'scaled_robust_NumberOfDependents']
+    return (y_variable, imp_cols, models_to_run, robustscale_cols, 
+        scale_columns, X_variables)
 
-def define_clfs_params:
+def define_clfs_params():
     '''
     Defines all relevant parameters and classes for classfier objects.
     '''
@@ -74,18 +91,32 @@ def define_clfs_params:
     
     return clfs, params
 
-def clf_loop(dataframe, clfs, models_to_run, y_variable, imp_cols = [],
- addl_runs = 0, evalution = ['precision'], precision_k = .05, plot = False):
+def clf_loop(dataframe, clfs, models_to_run, y_variable, X_variables, 
+ imp_cols = [], addl_runs = 0, evalution = ['AUC'], stat_k = .05, plot = True, 
+ robustscale_cols = [], scale_columns = []):
     '''
     Runs through each model specified by models_to_run once with each possible
     setting in params.
     '''
-    for n in range(1 + runs):
-        X_train, X_test, y_train, y_test = test_train_split(dataframe, 
+    for n in range(1 + addl_runs):
+        print('Sampling new test/train split...')
+        X_train, X_test, y_train, y_test = process.test_train_split(dataframe, 
             y_variable, test_size=0.1)
+        print('Imputing data for new split...')
         for col in imp_cols:
-            X_train, mean = impute(X_train, col, keep = True)
-            X_test = impute_specific(X_test, col, mean)
+            X_train, mean = process.impute(X_train, col, keep = True)
+            X_test = process.impute_specific(X_test, col, mean)
+        print('Finished imputing, transforming data...')
+        for col in robustscale_cols:
+            X_train = process.robust_transform(X_train, col)
+            X_test = process.robust_transform(X_test, col)
+        X_train = process.scale_columns(X_train, scale_columns)
+        X_test = process.scale_columns(X_test, scale_columns)
+        X_train = X_train[X_variables]
+        X_test = X_test[X_variables]
+        print('XTRAIN:', X_train)
+        print('XTEST:', X_test)
+        print('Training model...')
         for index, clf in enumerate([clfs[x] for x in models_to_run]):
             print(models_to_run[index])
             parameter_values = grid[models_to_run[index]]
@@ -96,31 +127,36 @@ def clf_loop(dataframe, clfs, models_to_run, y_variable, imp_cols = [],
                     y_pred_probs = clf.fit(X_train, y_train).predict_proba(
                         X_test)[:,1]
                     if 'precision' in evalution:
-                        print(precision_at_k(y_test, y_pred_probs,
-                         precision_k)
-                        if plot:
-                            plot_precision_recall_n(y_test, y_pred_probs, clf)
+                        print(precision_at_k(y_test, y_pred_probs, stat_k))
+                    if plot:
+                        plot_precision_recall_n(y_test, y_pred_probs, clf)
                     if 'AUC' in evalution:
-                        ## GET AUC CALC
+                        print(auc_at_k(y_test, y_pred_probs, stat_k))
                     if 'recall' in evalution:
-                        ## RECALL CALC
-                except IndexError, e:
-                    print 'Error:', e
+                        print(recall_at_k(y_test, y_pred_probs, stat_k))
+                except IndexError as e:
+                    print('Error: {0}'.format(e))
                     continue
 
 def plot_precision_recall_n(y_true, y_prob, model_name):
+    '''
+    Plots the precision recall curve.
+    '''
     from sklearn.metrics import precision_recall_curve
+
     y_score = y_prob
     precision_curve, recall_curve, pr_thresholds = precision_recall_curve(y_true, y_score)
     precision_curve = precision_curve[:-1]
     recall_curve = recall_curve[:-1]
     pct_above_per_thresh = []
     number_scored = len(y_score)
+    
     for value in pr_thresholds:
         num_above_thresh = len(y_score[y_score>=value])
         pct_above_thresh = num_above_thresh / float(number_scored)
         pct_above_per_thresh.append(pct_above_thresh)
     pct_above_per_thresh = np.array(pct_above_per_thresh)
+    
     plt.clf()
     fig, ax1 = plt.subplots()
     ax1.plot(pct_above_per_thresh, precision_curve, 'b')
@@ -135,29 +171,69 @@ def plot_precision_recall_n(y_true, y_prob, model_name):
     plt.savefig(name)
     #plt.show()
 
-def precision_at_k(y_true, y_scores, k):
+def auc_at_k(y_true, y_scores, k = None):
+    '''
+    Dyanamic k-threshold AUC. Defines threshold for Positive at the 
+    value that returns the k*n top values where k is within [0-1]. If k is not
+    specified, threshold will default to THRESHOLD.
+    '''
+    if k != None:
+        threshold = np.sort(y_scores)[::-1][int(k*len(y_scores))] 
+    else: 
+        threshold = THRESHOLD
+    y_pred = np.asarray([1 if i >= threshold else 0 for i in y_scores])
+    return (metrics.roc_auc_score(y_true, y_scores), threshold)
+
+def precision_at_k(y_true, y_scores, k = None):
     '''
     Dyanamic k-threshold precision. Defines threshold for Positive at the 
-    value that returns the k*n top values where k is within [0-1].
-
-    Uses 
+    value that returns the k*n top values where k is within [0-1]. If k is not
+    specified, threshold will default to THRESHOLD.
     '''
-    threshold = np.sort(y_scores)[::-1][int(k*len(y_scores))] 
+    if k != None:
+        threshold = np.sort(y_scores)[::-1][int(k*len(y_scores))] 
+    else: 
+        threshold = THRESHOLD
     y_pred = np.asarray([1 if i >= threshold else 0 for i in y_scores])
     return (metrics.precision_score(y_true, y_pred), threshold)
+
+def recall_at_k(y_true, y_scores, k = None):
+    '''
+    Dyanamic k-threshold recall. Defines threshold for Positive at the 
+    value that returns the k*n top values where k is within [0-1]. If k is not
+    specified, threshold will default to THRESHOLD.
+    '''
+    if k != None:
+        threshold = np.sort(y_scores)[::-1][int(k*len(y_scores))] 
+    else: 
+        threshold = THRESHOLD
+    y_pred = np.asarray([1 if i >= threshold else 0 for i in y_scores])
+    return (metrics.recall_score(y_true, y_pred), threshold)
 
 def main(filename): 
     '''
     Runs the loop.
     '''
-    clfs, params = define_clfs_params()
-    y_variable, imp_cols = define_project_params()
-    models_to_run =[ 'KNN','RF','LR','ET','AB','GB','NB','DT']
-    clf_loop(dataframe, clfs, models_to_run, y_variable, imp_cols = imp_cols)
+    dataframe = read.load_file(filename, index = 0)
+    # Replace 98s with missing values
+    dataframe = process.replace_value_with_nan(train, 
+        'NumberOfTime30-59DaysPastDueNotWorse', 98)
+    dataframe = process.replace_value_with_nan(train, 
+        'NumberOfTimes90DaysLate', 98)
+    dataframe = process.replace_value_with_nan(train, 
+        'NumberOfTime30-59DaysPastDueNotWorse', 98)
 
+    clfs, params = define_clfs_params()
+    y_variable, imp_cols, models_to_run, robustscale_cols, scale_columns,\
+    X_variables = define_project_params()
+    clf_loop(dataframe, clfs, models_to_run, y_variable, X_variables, imp_cols = imp_cols,
+        scale_columns = scale_columns)
+
+'''
 if __name__ == '__main__':
     if sys.argv[0] !=  []:
         data = read.load_file(sys.argv[0])
         main(sys.argv[0])
     else:
         print('Usage: model.py <datafilename>')
+'''

@@ -83,7 +83,18 @@ def plot(dataframe, col = None):
     '''
     histogram = ['object', 'category']
     if col: 
-
+        if dataframe[col].dtype.name in histogram:
+            dataframe[col].value_counts().plot(kind = 'bar')
+            plt.suptitle('Bar Graph for {}'.format(col), fontsize = 14)
+            plt.savefig('{}.png'.format(col))
+            print('Saved figure as {}.png'.format(col))
+            plt.close()
+        else:
+            dataframe[col].hist()
+            plt.suptitle('Histogram for {}'.format(col), fontsize = 14)
+            plt.savefig('{}.png'.format(col))
+            print('Saved figure as {}.png'.format(col))
+            plt.close()
     else:   
         for column in dataframe.columns:
             if dataframe[column].dtype.name in histogram:
@@ -124,5 +135,4 @@ def pairwise_correlation(dataframe, cols = []):
         data = dataframe
     if len(cols) != 1:
         return data.corr() 
-
 

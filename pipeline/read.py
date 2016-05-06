@@ -4,6 +4,8 @@
 # 
 # File read functions
 
+import pandas as pd
+
 def load_file(filename, index = None):
     '''
     Reads file with column index  and returns a Pandas dataframe. If index
