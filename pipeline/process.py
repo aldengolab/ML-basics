@@ -50,13 +50,12 @@ def impute_mean(data, column):
 
     Inputs: pandas dataframe, column to impute into
     '''
-    dataframe = copy.deepcopy(data)
-    mean = dataframe[column].mean()
-
-    for row in dataframe[dataframe[column].isnull()].iterrows():
-        dataframe.loc[row[0], column] = mean
-
-    return dataframe, mean
+    mean = data[column].mean()
+    imp = sklearn.preprocessing.Imputer(missing_values='NaN', strategy='mean', axis=0)
+    new = pd.DataFrame(imp.fit_transform(data[column].reshape(-1,1)))
+    new.index = [x for x in range(1, len(new) + 1)]
+    data[column] = new
+    return data, mean
 
 def impute_cond(data, column, classification):
     '''
@@ -101,13 +100,13 @@ def impute_specific(data, column, value):
 
 def robust_transform(dataframe, column):
     '''
-    Performs robust transformation on column and appends as new column.
+    Performs robust transformation on column.
     '''
-    new = sklearn.preprocessing.robust_scale(dataframe[col].reshape(-1,1))
+    new = sklearn.preprocessing.robust_scale(dataframe[column].reshape(-1,1))
     new = pd.DataFrame(new)
-    new.columns = ['robust_' + column]
     new.index = [x for x in range(1, len(new) + 1)]
-    return pd.concat([dataframe, new], axis = 1)
+    dataframe[column] = new
+    return dataframe
 
 def discretize(data, column, bins = 5, bin_size = None, labels = None, max_val = None, 
     min_val = None):
@@ -224,8 +223,9 @@ def normalize_scale(dataframe, col, negative = False):
     for x in data:
         new.append(((scalerange * (x - minval)) / valrange) + scalemin)
     data = pd.Series(new)
-    data.name = 'scaled_' + str(col)
-    return pd.concat([dataframe, data], axis = 1)
+    data.index = [x for x in range(1, len(new) + 1)]
+    dataframe[col] = data
+    return dataframe
 
 def test_train_split(dataframe, y_variable, test_size = .1):
     '''

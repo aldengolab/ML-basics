@@ -47,16 +47,16 @@ def define_project_params():
     'NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse', 
     'NumberOfDependents', 'RevolvingUtilizationOfUnsecuredLines']
     models_to_run = ['KNN','RF','LR','AB','NB','DT']
-    scale_columns = ['robust_RevolvingUtilizationOfUnsecuredLines', 'age', 
-    'robust_NumberOfTime30-59DaysPastDueNotWorse', 'robust_DebtRatio', 
-    'robust_MonthlyIncome', 'robust_NumberOfOpenCreditLinesAndLoans', 
-    'robust_NumberOfTimes90DaysLate', 'robust_NumberRealEstateLoansOrLines',
-    'robust_NumberOfTime60-89DaysPastDueNotWorse', 'robust_NumberOfDependents']
-    X_variables = ['scaled_robust_RevolvingUtilizationOfUnsecuredLines', 'scaled_age', 
-    'scaled_robust_NumberOfTime30-59DaysPastDueNotWorse', 'scaled_robust_DebtRatio', 
-    'scaled_robust_MonthlyIncome', 'scaled_robust_NumberOfOpenCreditLinesAndLoans', 
-    'scaled_robust_NumberOfTimes90DaysLate', 'scaled_robust_NumberRealEstateLoansOrLines',
-    'scaled_robust_NumberOfTime60-89DaysPastDueNotWorse', 'scaled_robust_NumberOfDependents']
+    scale_columns = ['RevolvingUtilizationOfUnsecuredLines', 'age', 
+    'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 
+    'MonthlyIncome', 'NumberOfOpenCreditLinesAndLoans', 
+    'NumberOfTimes90DaysLate', 'NumberRealEstateLoansOrLines',
+    'NumberOfTime60-89DaysPastDueNotWorse', 'NumberOfDependents']
+    X_variables = ['RevolvingUtilizationOfUnsecuredLines', 'age', 
+    'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 
+    'MonthlyIncome', 'NumberOfOpenCreditLinesAndLoans', 
+    'NumberOfTimes90DaysLate', 'NumberRealEstateLoansOrLines',
+    'NumberOfTime60-89DaysPastDueNotWorse', 'NumberOfDependents']
     return (y_variable, imp_cols, models_to_run, robustscale_cols, 
         scale_columns, X_variables)
 
@@ -106,14 +106,14 @@ def clf_loop(dataframe, clfs, models_to_run, y_variable, X_variables,
         for col in imp_cols:
             X_train, mean = process.impute(X_train, col, keep = True)
             X_test = process.impute_specific(X_test, col, mean)
+        print('XTRAIN:', X_train)
+        print('XTEST:', X_test)
         print('Finished imputing, transforming data...')
         for col in robustscale_cols:
             X_train = process.robust_transform(X_train, col)
             X_test = process.robust_transform(X_test, col)
         X_train = process.scale_columns(X_train, scale_columns)
         X_test = process.scale_columns(X_test, scale_columns)
-        X_train = X_train[X_variables]
-        X_test = X_test[X_variables]
         print('XTRAIN:', X_train)
         print('XTEST:', X_test)
         print('Training model...')
@@ -216,16 +216,16 @@ def main(filename):
     '''
     dataframe = read.load_file(filename, index = 0)
     # Replace 98s with missing values
-    dataframe = process.replace_value_with_nan(train, 
+    dataframe = process.replace_value_with_nan(dataframe, 
         'NumberOfTime30-59DaysPastDueNotWorse', 98)
-    dataframe = process.replace_value_with_nan(train, 
+    dataframe = process.replace_value_with_nan(dataframe, 
         'NumberOfTimes90DaysLate', 98)
-    dataframe = process.replace_value_with_nan(train, 
+    dataframe = process.replace_value_with_nan(dataframe, 
         'NumberOfTime30-59DaysPastDueNotWorse', 98)
 
     clfs, params = define_clfs_params()
-    y_variable, imp_cols, models_to_run, robustscale_cols, scale_columns,\
-    X_variables = define_project_params()
+    y_variable, imp_cols, models_to_run, robustscale_cols, scale_columns, \
+     X_variables = define_project_params()
     clf_loop(dataframe, clfs, models_to_run, y_variable, X_variables, imp_cols = imp_cols,
         scale_columns = scale_columns)
 
