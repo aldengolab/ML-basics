@@ -41,7 +41,7 @@ def impute(data, column, method = 'mean', classification = None,
         data.to_csv(new_file)
         print('Wrote data with imputation to {}'.format(new_file))
     if keep and method == 'mean':
-        return data, mean
+        return (data, mean)
     return data 
 
 def impute_mean(data, column):
@@ -53,13 +53,15 @@ def impute_mean(data, column):
     mean = data[column].mean()
     imp = sklearn.preprocessing.Imputer(missing_values='NaN', strategy='mean', axis=0)
     new = pd.DataFrame(imp.fit_transform(data[column].reshape(-1,1)))
-    new.index = [x for x in range(1, len(new) + 1)]
-    data[column] = new
-    return data, mean
+    new.index = data.index
+    new.columns = [column]
+    data.drop(column, axis = 1)
+    data = pd.concat([data, new], axis = 1)
+    return (data, mean)
 
 def impute_cond(data, column, classification):
     '''
-    Genderalized conditional mean imputation.
+    Generalized conditional mean imputation.
 
     Inputs: pandas dataframe, column to impute into, classification to impute on
     Returns: 
@@ -104,7 +106,7 @@ def robust_transform(dataframe, column):
     '''
     new = sklearn.preprocessing.robust_scale(dataframe[column].reshape(-1,1))
     new = pd.DataFrame(new)
-    new.index = [x for x in range(1, len(new) + 1)]
+    new.index = dataframe.index
     dataframe[column] = new
     return dataframe
 
@@ -216,15 +218,15 @@ def normalize_scale(dataframe, col, negative = False):
     else:
         scalemin = 0
     scalerange = scalemax - scalemin
-    assert maxval != 0
-    assert minval != maxval
     new = []
 
     for x in data:
         new.append(((scalerange * (x - minval)) / valrange) + scalemin)
     data = pd.Series(new)
     data.index = [x for x in range(1, len(new) + 1)]
-    dataframe[col] = data
+    data.name = col
+    dataframe.drop(col, axis=1)
+    dataframe = pd.concat([dataframe, data], axis=1)
     return dataframe
 
 def test_train_split(dataframe, y_variable, test_size = .1):

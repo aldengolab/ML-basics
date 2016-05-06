@@ -104,10 +104,8 @@ def clf_loop(dataframe, clfs, models_to_run, y_variable, X_variables,
             y_variable, test_size=0.1)
         print('Imputing data for new split...')
         for col in imp_cols:
-            X_train, mean = process.impute(X_train, col, keep = True)
+            X_train, mean = process.impute_mean(X_train, col)
             X_test = process.impute_specific(X_test, col, mean)
-        print('XTRAIN:', X_train)
-        print('XTEST:', X_test)
         print('Finished imputing, transforming data...')
         for col in robustscale_cols:
             X_train = process.robust_transform(X_train, col)
