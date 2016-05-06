@@ -224,11 +224,9 @@ def main(filename):
     clf_loop(dataframe, clfs, models_to_run, params, y_variable, X_variables, 
         imp_cols = imp_cols, scale_columns = scale_columns)
 
-'''
 if __name__ == '__main__':
-    if sys.argv[0] !=  []:
-        data = read.load_file(sys.argv[0])
-        main(sys.argv[0])
+    if len(sys.argv) > 1:
+        data = read.load_file(sys.argv[1])
+        main(sys.argv[1])
     else:
         print('Usage: model.py <datafilename>')
-'''
