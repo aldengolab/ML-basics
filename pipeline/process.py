@@ -55,7 +55,7 @@ def impute_mean(data, column):
     new = pd.DataFrame(imp.fit_transform(data[column].reshape(-1,1)))
     new.index = data.index
     new.columns = [column]
-    data.drop(column, axis = 1)
+    data = data.drop(column, axis = 1)
     data = pd.concat([data, new], axis = 1)
     return (data, mean)
 
@@ -107,7 +107,9 @@ def robust_transform(dataframe, column):
     new = sklearn.preprocessing.robust_scale(dataframe[column].reshape(-1,1))
     new = pd.DataFrame(new)
     new.index = dataframe.index
-    dataframe[column] = new
+    new.columns = [column]
+    dataframe = dataframe.drop(column, axis=1)
+    dataframe = pd.concat([dataframe, new], axis=1)
     return dataframe
 
 def discretize(data, column, bins = 5, bin_size = None, labels = None, max_val = None, 
@@ -205,8 +207,6 @@ def normalize_scale(dataframe, col, negative = False):
     '''
     Scales range to [0, 1] range. Will scale to [-1, 1] if negative is
     set to True.
-
-    Returns new dataframe with column added.
     '''
     data = dataframe[col]
     maxval = max(data)
@@ -222,10 +222,10 @@ def normalize_scale(dataframe, col, negative = False):
 
     for x in data:
         new.append(((scalerange * (x - minval)) / valrange) + scalemin)
-    data = pd.Series(new)
-    data.index = [x for x in range(1, len(new) + 1)]
-    data.name = col
-    dataframe.drop(col, axis=1)
+    data = pd.DataFrame(new)
+    data.index = dataframe.index
+    data.columns = [col]
+    dataframe = dataframe.drop(col, axis=1)
     dataframe = pd.concat([dataframe, data], axis=1)
     return dataframe
 

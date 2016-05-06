@@ -42,10 +42,9 @@ def define_project_params():
     y_variable = 'SeriousDlqin2yrs'
     imp_cols = ['MonthlyIncome', 'NumberOfDependents', 'NumberOfTimes90DaysLate',
     'NumberOfTime60-89DaysPastDueNotWorse', 'NumberOfTime30-59DaysPastDueNotWorse']
-    robustscale_cols = ['MonthlyIncome', 'NumberOfTime30-59DaysPastDueNotWorse',
-    'DebtRatio', 'NumberOfOpenCreditLinesAndLoans', 'NumberOfTimes90DaysLate', 
-    'NumberRealEstateLoansOrLines', 'NumberOfTime60-89DaysPastDueNotWorse', 
-    'NumberOfDependents', 'RevolvingUtilizationOfUnsecuredLines']
+    robustscale_cols = ['MonthlyIncome',
+    'DebtRatio', 'NumberOfOpenCreditLinesAndLoans', 'NumberRealEstateLoansOrLines',
+    'RevolvingUtilizationOfUnsecuredLines']
     models_to_run = ['KNN','RF','LR','AB','NB','DT']
     scale_columns = ['RevolvingUtilizationOfUnsecuredLines', 'age', 
     'NumberOfTime30-59DaysPastDueNotWorse', 'DebtRatio', 
@@ -112,8 +111,8 @@ def clf_loop(dataframe, clfs, models_to_run, y_variable, X_variables,
             X_test = process.robust_transform(X_test, col)
         X_train = process.scale_columns(X_train, scale_columns)
         X_test = process.scale_columns(X_test, scale_columns)
-        print('XTRAIN:', X_train)
-        print('XTEST:', X_test)
+        print(X_train)
+        print(X_test)
         print('Training model...')
         for index, clf in enumerate([clfs[x] for x in models_to_run]):
             print(models_to_run[index])
