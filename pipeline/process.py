@@ -100,16 +100,24 @@ def impute_specific(data, column, value):
 
     return dataframe
 
-def robust_transform(dataframe, column):
+def robust_transform(dataframe, column, keep = False, scaler = None):
     '''
     Performs robust transformation on column.
     '''
-    new = sklearn.preprocessing.robust_scale(dataframe[column].reshape(-1,1))
+    if scaler == None and not keep:
+        new = sklearn.preprocessing.robust_scale(dataframe[column].reshape(-1,1))
+    elif keep:
+        scaler_set = sklearn.preprocessing.RobustScaler(with_centering=True, with_scaling=True, copy=True)
+        new = scaler_set.fit_transform(dataframe[column].reshape(-1,1))
+    elif scaler != None:
+        new = scaler.transform(dataframe[column].reshape(-1,1))
     new = pd.DataFrame(new)
     new.index = dataframe.index
     new.columns = [column]
     dataframe = dataframe.drop(column, axis=1)
     dataframe = pd.concat([dataframe, new], axis=1)
+    if keep:
+        return (dataframe, scaler_set)
     return dataframe
 
 def discretize(data, column, bins = 5, bin_size = None, labels = None, max_val = None, 
@@ -203,14 +211,16 @@ def log_scale(dataframe, col):
         raise ValueError
     return pd.concat([dataframe, data], axis = 1)
 
-def normalize_scale(dataframe, col, negative = False):
+def normalize_scale(dataframe, col, negative = False, keep = False, maxval = None, minval = None):
     '''
     Scales range to [0, 1] range. Will scale to [-1, 1] if negative is
     set to True.
     '''
     data = dataframe[col]
-    maxval = max(data)
-    minval = min(data)
+    if minval == None:
+        minval = min(data)
+    if maxval == None:
+        maxval = max(data)
     valrange = maxval - minval
     scalemax = 1
     if negative:
@@ -227,7 +237,10 @@ def normalize_scale(dataframe, col, negative = False):
     data.columns = [col]
     dataframe = dataframe.drop(col, axis=1)
     dataframe = pd.concat([dataframe, data], axis=1)
-    return dataframe
+    if keep: 
+        return(dataframe, maxval, minval)
+    else:
+        return dataframe
 
 def test_train_split(dataframe, y_variable, test_size = .1):
     '''
@@ -246,14 +259,6 @@ def test_train_split(dataframe, y_variable, test_size = .1):
     train.drop(y_variable, axis = 1, inplace = True)
 
     return test, train, test_y, train_y
-
-def scale_columns(dataframe, columns):
-    '''
-    Carries out scale operation for all columns specified.
-    '''
-    for col in columns: 
-        dataframe = normalize_scale(dataframe, col)
-    return dataframe
 
 def replace_value_with_nan(data, column, value):
     '''
